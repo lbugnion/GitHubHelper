@@ -1,5 +1,4 @@
 ﻿using GitHubHelper.Utilities;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -50,19 +49,15 @@ namespace GitHubHelper
             string githubToken,
             string commitMessage,
             IList<(string path, string content)> fileNamesAndContent,
-            GetHeadResult existingBranchInfo = null,
-            ILogger log = null)
+            GetHeadResult existingBranchInfo = null)
         {
-            log?.LogInformation("In GitHubHelper.CommitFiles");
-
             if (existingBranchInfo == null)
             {
                 existingBranchInfo = await GetHead(
                     accountName,
                     repoName,
                     branchName,
-                    githubToken,
-                    log);
+                    githubToken);
 
                 if (!string.IsNullOrEmpty(existingBranchInfo.ErrorMessage))
                 {
@@ -73,7 +68,7 @@ namespace GitHubHelper
                 }
             }
 
-            var mainCommit = await GetMainCommit(existingBranchInfo, githubToken, log);
+            var mainCommit = await GetMainCommit(existingBranchInfo, githubToken);
 
             if (!string.IsNullOrEmpty(mainCommit.ErrorMessage))
             {
@@ -90,7 +85,6 @@ namespace GitHubHelper
 
             foreach (var (path, content) in fileNamesAndContent)
             {
-                log?.LogDebug($"Posting to GitHub blob: {path}");
                 var uploadInfo = new UploadInfo
                 {
                     Content = content
@@ -121,7 +115,6 @@ namespace GitHubHelper
                     try
                     {
                         var errorMessage = $"Error uploading blob: {await uploadBlobResponse.Content.ReadAsStringAsync()}";
-                        log?.LogError(errorMessage);
                         return new GetHeadResult
                         {
                             ErrorMessage = errorMessage
@@ -130,7 +123,6 @@ namespace GitHubHelper
                     catch (Exception ex)
                     {
                         var errorMessage = $"Unknown error uploading blob: {ex.Message}";
-                        log?.LogError(errorMessage);
                         return new GetHeadResult
                         {
                             ErrorMessage = errorMessage
@@ -140,7 +132,6 @@ namespace GitHubHelper
 
                 var uploadBlobJsonResult = await uploadBlobResponse.Content.ReadAsStringAsync();
                 var uploadBlobResult = JsonConvert.DeserializeObject<ShaInfo>(uploadBlobJsonResult);
-                log?.LogInformation($"Done posting to GitHub blob {uploadBlobResult.Sha}");
 
                 var info = new TreeInfo(path, uploadBlobResult.Sha);
                 treeInfos.Add(info);
@@ -148,7 +139,6 @@ namespace GitHubHelper
 
             // Create the tree
 
-            log?.LogInformation("Creating the tree");
             var newTreeInfo = new CreateTreeInfo()
             {
                 BaseTree = mainCommit.Tree.Sha,
@@ -181,7 +171,6 @@ namespace GitHubHelper
                 try
                 {
                     var message = $"Error creating tree: {await response.Content.ReadAsStringAsync()}";
-                    log?.LogError(message);
                     return new GetHeadResult
                     {
                         ErrorMessage = message
@@ -190,7 +179,6 @@ namespace GitHubHelper
                 catch (Exception ex)
                 {
                     var message = $"Unknown error creating tree: {ex.Message}";
-                    log?.LogError(message);
                     return new GetHeadResult
                     {
                         ErrorMessage = message
@@ -200,11 +188,9 @@ namespace GitHubHelper
 
             var jsonResult = await response.Content.ReadAsStringAsync();
             var createTreeResult = JsonConvert.DeserializeObject<ShaInfo>(jsonResult);
-            log?.LogInformation($"Done creating the tree {createTreeResult.Sha}");
 
             // Create the commit
 
-            log?.LogInformation("Creating the commit");
             var commitInfo = new CommitInfo(
                 commitMessage,
                 mainCommit.Sha,
@@ -235,7 +221,6 @@ namespace GitHubHelper
                 try
                 {
                     var message = $"Error creating commit: {await response.Content.ReadAsStringAsync()}";
-                    log?.LogError(message);
                     return new GetHeadResult
                     {
                         ErrorMessage = message
@@ -244,7 +229,6 @@ namespace GitHubHelper
                 catch (Exception ex)
                 {
                     var message = $"Unknown error creating commit: {ex.Message}";
-                    log?.LogError(message);
                     return new GetHeadResult
                     {
                         ErrorMessage = message
@@ -254,11 +238,8 @@ namespace GitHubHelper
 
             jsonResult = await response.Content.ReadAsStringAsync();
             var createCommitResult = JsonConvert.DeserializeObject<ShaInfo>(jsonResult);
-            log?.LogInformation($"Done creating the commit {createCommitResult.Sha}");
 
             // Update reference
-
-            log?.LogInformation("Updating the reference");
             var updateReferenceInfo = new UpdateReferenceInfo(createCommitResult.Sha);
 
             jsonRequest = JsonConvert.SerializeObject(updateReferenceInfo);
@@ -286,7 +267,6 @@ namespace GitHubHelper
                 try
                 {
                     var message = $"Error updating reference: {await response.Content.ReadAsStringAsync()}";
-                    log?.LogError(message);
                     return new GetHeadResult
                     {
                         ErrorMessage = message
@@ -295,7 +275,6 @@ namespace GitHubHelper
                 catch (Exception ex)
                 {
                     var message = $"Unknown error updating reference: {ex.Message}";
-                    log?.LogError(message);
                     return new GetHeadResult
                     {
                         ErrorMessage = message
@@ -305,11 +284,6 @@ namespace GitHubHelper
 
             jsonResult = await response.Content.ReadAsStringAsync();
             var headResult = JsonConvert.DeserializeObject<GetHeadResult>(jsonResult);
-            log?.LogInformation("Done updating the reference");
-            log?.LogDebug($"Ref: {headResult.Ref}");
-
-            log?.LogInformation("Out GitHubHelper.CommitFiles");
-
             return headResult;
         }
 
@@ -323,12 +297,11 @@ namespace GitHubHelper
             string repoName,
             IList<ReleaseNotesPageInfo> createFor,
             IList<string> forMilestones,
-            string token,
-            ILogger log = null)
+            string token)
         {
             var result = new ReleaseNotesResult();
 
-            var issuesResult = await GetIssues(accountName, repoName, token, log);
+            var issuesResult = await GetIssues(accountName, repoName, token);
 
             if (!string.IsNullOrEmpty(issuesResult.ErrorMessage))
             {
@@ -398,8 +371,7 @@ namespace GitHubHelper
             string projectId,
             IList<IssueInfo> issuesForPage,
             IList<string> forMilestones,
-            IList<string> header,
-            ILogger log = null)
+            IList<string> header)
         {
             var builder = new StringBuilder()
                 .AppendLine(
@@ -544,11 +516,8 @@ namespace GitHubHelper
         public async Task<IssueResult> GetIssues(
             string accountName,
             string repoName,
-            string token,
-            ILogger log = null)
+            string token)
         {
-            log?.LogInformation("In GitHubHelper.CreateReleaseNotes");
-
             var request = new HttpRequestMessage
             {
                 RequestUri = new Uri(
@@ -587,11 +556,8 @@ namespace GitHubHelper
             string repoName,
             string token,
             GetHeadResult mainHead,
-            string newBranchName = null,
-            ILogger log = null)
+            string newBranchName = null)
         {
-            log?.LogInformation("In GitHubHelper.CreateNewBranch");
-
             var newBranchRequestBody = new NewBranchInfo
             {
                 Sha = mainHead.Object.Sha,
@@ -617,7 +583,6 @@ namespace GitHubHelper
             {
                 var errorResultJson = await response.Content.ReadAsStringAsync();
                 var errorResult = JsonConvert.DeserializeObject<ErrorResult>(errorResultJson);
-                log?.LogError($"Error when creating new branch: {newBranchName} / {errorResult.ErrorMessage}");
                 return new GetHeadResult
                 {
                     ErrorMessage = $"Error when creating new branch: {newBranchName} / {errorResult.ErrorMessage}"
@@ -626,10 +591,6 @@ namespace GitHubHelper
 
             var jsonResult = await response.Content.ReadAsStringAsync();
             var createNewBranchResult = JsonConvert.DeserializeObject<GetHeadResult>(jsonResult);
-            log?.LogDebug($"Done creating new branch {createNewBranchResult.Object.Sha}");
-
-            log?.LogInformation("Out GitHubHelper.CreateNewBranch");
-
             return createNewBranchResult;
         }
 
@@ -637,19 +598,13 @@ namespace GitHubHelper
             string accountName,
             string repoName,
             string branchName,
-            string token,
-            ILogger log = null)
+            string token)
         {
-            log?.LogInformation("In GitHubHelper.GetHead");
-
             var url = string.Format(
                 GitHubApiBaseUrlMask,
                 accountName,
                 repoName,
                 string.Format(GetHeadUrl, branchName));
-
-            log?.LogDebug($"repoName: {repoName}");
-            log?.LogDebug($"url: {url}");
 
             var request = new HttpRequestMessage
             {
@@ -667,7 +622,6 @@ namespace GitHubHelper
                 try
                 {
                     var errorMessage = $"Error getting head for {branchName}: {await response.Content.ReadAsStringAsync()}";
-                    log?.LogError(errorMessage);
                     return new GetHeadResult
                     {
                         ErrorMessage = errorMessage
@@ -676,7 +630,6 @@ namespace GitHubHelper
                 catch (Exception ex)
                 {
                     var errorMessage = $"Unknown error getting head for {branchName}: {ex.Message}";
-                    log?.LogError(errorMessage);
                     return new GetHeadResult
                     {
                         ErrorMessage = errorMessage
@@ -686,22 +639,14 @@ namespace GitHubHelper
 
             var jsonResult = await response.Content.ReadAsStringAsync();
             var mainHead = JsonConvert.DeserializeObject<GetHeadResult>(jsonResult);
-            log?.LogDebug($"Found head for {branchName}");
-
-            log?.LogInformation("Out GitHubHelper.GetHead");
-
             return mainHead;
         }
 
         public async Task<CommitResult> GetMainCommit(
             GetHeadResult branchHead,
-            string githubToken,
-            ILogger log = null)
+            string githubToken)
         {
             // Grab main commit
-
-            log?.LogInformation("In GitHubHelper.GetMainCommit");
-
             var request = new HttpRequestMessage
             {
                 RequestUri = new Uri(branchHead.Object.Url),
@@ -718,7 +663,6 @@ namespace GitHubHelper
                 try
                 {
                     var errorMessage = $"Error getting commit: {await response.Content.ReadAsStringAsync()}";
-                    log?.LogError(errorMessage);
                     return new CommitResult
                     {
                         ErrorMessage = errorMessage
@@ -727,7 +671,6 @@ namespace GitHubHelper
                 catch (Exception ex)
                 {
                     var errorMessage = $"Unknown error getting commit: {ex.Message}";
-                    log?.LogError(errorMessage);
                     return new CommitResult
                     {
                         ErrorMessage = errorMessage
@@ -737,10 +680,6 @@ namespace GitHubHelper
 
             var jsonResult = await response.Content.ReadAsStringAsync();
             var masterCommitResult = JsonConvert.DeserializeObject<CommitResult>(jsonResult);
-            log?.LogDebug($"Done grabbing master commit {masterCommitResult.Sha}");
-
-            log?.LogInformation("Out GitHubHelper.GetMainCommit");
-
             return masterCommitResult;
         }
 
@@ -749,19 +688,10 @@ namespace GitHubHelper
             string repoName,
             string branchName,
             string filePathWithExtension,
-            string githubToken,
-            ILogger log = null)
+            string githubToken)
         {
-            log?.LogInformation("-> GitHubHelper.GetTextFile");
-            log?.LogDebug($"accountName: {accountName}");
-            log?.LogDebug($"repoName: {repoName}");
-            log?.LogDebug($"branchName: {branchName}");
-            log?.LogDebug($"filePathWithExtension: {filePathWithExtension}");
-
             var getFileUrl = string.Format(GetMarkdownFileUrl, filePathWithExtension, branchName);
             var url = string.Format(GitHubApiBaseUrlMask, accountName, repoName, getFileUrl);
-
-            log?.LogDebug($"url: {url}");
 
             var request = new HttpRequestMessage
             {
@@ -777,15 +707,6 @@ namespace GitHubHelper
 
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                if (response.StatusCode == HttpStatusCode.NotFound)
-                {
-                    log?.LogWarning($"Not found: {filePathWithExtension}");
-                }
-                else
-                {
-                    log?.LogError($"Error with the request for {filePathWithExtension}: {responseText}");
-                }
-
                 return new GetTextFileResult
                 {
                     StatusCode = response.StatusCode,
@@ -797,13 +718,8 @@ namespace GitHubHelper
             {
                 var result = JsonConvert.DeserializeObject<GetTextFileResult>(responseText);
 
-                log?.LogDebug($"result: {result}");
-
                 if (result.Type != "file")
                 {
-                    log?.LogError($"{filePathWithExtension} doesn't seem to be a file on GitHub");
-                    log?.LogDebug(result.Type);
-
                     return new GetTextFileResult
                     {
                         ErrorMessage = $"{filePathWithExtension} doesn't seem to be a file on GitHub"
@@ -812,8 +728,6 @@ namespace GitHubHelper
 
                 if (string.IsNullOrEmpty(result.EncodedContent))
                 {
-                    log?.LogError($"{filePathWithExtension} doesn't have content");
-
                     return new GetTextFileResult
                     {
                         ErrorMessage = $"{filePathWithExtension} doesn't have content"
@@ -822,9 +736,6 @@ namespace GitHubHelper
 
                 var bytes = Convert.FromBase64String(result.EncodedContent);
                 result.TextContent = Encoding.UTF8.GetString(bytes);
-
-                log.LogDebug($"TextContent: {result.TextContent}");
-
                 return result;
             }
             catch (Exception ex)

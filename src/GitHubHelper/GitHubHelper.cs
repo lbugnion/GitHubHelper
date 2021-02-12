@@ -333,11 +333,16 @@ namespace GitHubHelper
 
             foreach (var page in createFor)
             {
-                result.CreatedPages.Add(page);
-
                 var issuesForPage = issuesResult.Issues
                     .Where(i => i.Projects.Contains(page.Project))
                     .ToList();
+
+                if (issuesForPage.Count == 0)
+                {
+                    continue;
+                }
+
+                result.CreatedPages.Add(page);
 
                 var markdown = CreatePageFor(
                     accountName,
@@ -368,7 +373,7 @@ namespace GitHubHelper
             string accountName,
             string repoName,
             string projectName,
-            string projectId,
+            int projectId,
             IList<IssueInfo> issuesForPage,
             IList<string> forMilestones,
             IList<string> header)
@@ -396,38 +401,46 @@ namespace GitHubHelper
             }
 
             var openIssues = issuesForPage
-                .Where(i => i.State == IssueState.Open);
+                .Where(i => i.State == IssueState.Open)
+                .ToList();
 
-            var milestones = openIssues
-                .Select(i => i.Milestone)
-                .OrderBy(m => m.DueOnLocal)
-                .GroupBy(m => m.Title);
+            if (openIssues.Count > 0)
+            {
+                var milestones = openIssues
+                    .Select(i => i.Milestone)
+                    .OrderBy(m => m.DueOnLocal)
+                    .GroupBy(m => m.Title);
 
-            BuildIssuesSection(
-                builder,
-                projectName,
-                forMilestones,
-                GitHubConstants.OpenIssuesTitle,
-                GitHubConstants.OpenIssuesSectionTitleTemplate,
-                openIssues,
-                milestones);
+                BuildIssuesSection(
+                    builder,
+                    projectName,
+                    forMilestones,
+                    GitHubConstants.OpenIssuesTitle,
+                    GitHubConstants.OpenIssuesSectionTitleTemplate,
+                    openIssues,
+                    milestones);
+            }
 
             var closedIssues = issuesForPage
-                .Where(i => i.State == IssueState.Closed);
+                .Where(i => i.State == IssueState.Closed)
+                .ToList();
 
-            milestones = closedIssues
-                .Select(i => i.Milestone)
-                .OrderByDescending(m => m.ClosedLocal)
-                .GroupBy(m => m.Title);
+            if (closedIssues.Count > 0)
+            {
+                var milestones = closedIssues
+                    .Select(i => i.Milestone)
+                    .OrderByDescending(m => m.ClosedLocal)
+                    .GroupBy(m => m.Title);
 
-            BuildIssuesSection(
-                builder,
-                projectName,
-                forMilestones,
-                GitHubConstants.ClosedIssuesTitle,
-                GitHubConstants.ClosedIssuesSectionTitleTemplate,
-                closedIssues,
-                milestones);
+                BuildIssuesSection(
+                    builder,
+                    projectName,
+                    forMilestones,
+                    GitHubConstants.ClosedIssuesTitle,
+                    GitHubConstants.ClosedIssuesSectionTitleTemplate,
+                    closedIssues,
+                    milestones);
+            }
 
             return builder.ToString();
         }

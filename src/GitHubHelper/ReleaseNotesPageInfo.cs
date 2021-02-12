@@ -34,7 +34,7 @@ namespace GitHubHelper
             set;
         }
 
-        public string ProjectId
+        public int ProjectId
         {
             get;
             set;

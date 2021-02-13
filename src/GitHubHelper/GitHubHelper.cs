@@ -298,6 +298,7 @@ namespace GitHubHelper
             string branchName,
             IList<ReleaseNotesPageInfo> createFor,
             IList<string> forMilestones,
+            bool singlePage,
             string token)
         {
             var result = new ReleaseNotesResult();
@@ -329,6 +330,7 @@ namespace GitHubHelper
                 }
             }
 
+            var subPages = new List<ReleaseNotesPageInfo>();
             result.CreatedPages = new List<ReleaseNotesPageInfo>();
 
             foreach (var page in createFor.Where(p => !p.IsMainPage))
@@ -351,19 +353,27 @@ namespace GitHubHelper
 
                 if (issuesForPage.Count == 0)
                 {
-                    continue;
+                    page.Markdown = "> Nothing found";
+                }
+                else
+                {
+                    page.Markdown = CreateReleaseNotesPageFor(
+                        accountName,
+                        repoName,
+                        page.Project,
+                        page.ProjectId,
+                        issuesForPage,
+                        forMilestones,
+                        page.Header,
+                        singlePage);
                 }
 
-                result.CreatedPages.Add(page);
+                subPages.Add(page);
 
-                page.Markdown = CreateReleaseNotesPageFor(
-                    accountName,
-                    repoName,
-                    page.Project,
-                    page.ProjectId,
-                    issuesForPage,
-                    forMilestones,
-                    page.Header);
+                if (!singlePage)
+                {
+                    result.CreatedPages.Add(page);
+                }
             }
 
             var mainPage = createFor.FirstOrDefault(p => p.IsMainPage);
@@ -388,8 +398,9 @@ namespace GitHubHelper
                     accountName,
                     repoName,
                     mainPage.Project,
-                    createFor.Where(p => !p.IsMainPage),
-                    mainPage.Header);
+                    subPages,
+                    mainPage.Header,
+                    singlePage);
             }
 
             return result;
@@ -400,12 +411,14 @@ namespace GitHubHelper
             string repoName,
             string projectName,
             IEnumerable<ReleaseNotesPageInfo> projectPages, 
-            IList<string> header)
-        {
+            IList<string> header,
+            bool singlePage)
+        {   
             var builder = new StringBuilder()
                 .AppendLine(
                     string.Format(
                         GitHubConstants.ReleaseNoteTitleTemplate,
+                        string.Empty,
                         projectName,
                         string.Format(
                             GitHubConstants.RepoUrlTemplate,
@@ -423,17 +436,30 @@ namespace GitHubHelper
                 }
             }
 
-            builder
-                .AppendLine("## Projects in this repo")
-                .AppendLine();
-
-            foreach (var page in projectPages)
+            if (singlePage)
+            {
+                foreach (var page in projectPages)
+                {
+                    builder
+                        .AppendLine(page.Markdown)
+                        .AppendLine();
+                }
+            }
+            else
             {
                 builder
-                    .AppendLine($"- [{page.Project}]({page.Url})");
+                    .AppendLine("## Projects in this repo")
+                    .AppendLine();
+
+                foreach (var page in projectPages)
+                {
+                    builder
+                        .AppendLine($"- [{page.Project}]({page.Url})");
+                }
+
+                builder.AppendLine();
             }
 
-            builder.AppendLine();
             return builder.ToString();
         }
 
@@ -444,12 +470,14 @@ namespace GitHubHelper
             int projectId,
             IList<IssueInfo> issuesForPage,
             IList<string> forMilestones,
-            IList<string> header)
+            IList<string> header,
+            bool singlePage)
         {
             var builder = new StringBuilder()
                 .AppendLine(
                     string.Format(
                         GitHubConstants.ReleaseNoteTitleTemplate,
+                        singlePage ? "#" : string.Empty,
                         projectName,
                         string.Format(
                             GitHubConstants.ProjectUrlTemplate,
@@ -483,10 +511,13 @@ namespace GitHubHelper
                     builder,
                     projectName,
                     forMilestones,
-                    GitHubConstants.OpenIssuesTitle,
+                    string.Format(
+                        GitHubConstants.OpenIssuesTitle,
+                        singlePage ? "#" : string.Empty),
                     GitHubConstants.OpenIssuesSectionTitleTemplate,
                     openIssues,
-                    milestones);
+                    milestones,
+                    singlePage);
             }
 
             var closedIssues = issuesForPage
@@ -504,10 +535,13 @@ namespace GitHubHelper
                     builder,
                     projectName,
                     forMilestones,
-                    GitHubConstants.ClosedIssuesTitle,
+                    string.Format(
+                        GitHubConstants.ClosedIssuesTitle,
+                        singlePage ? "#" : string.Empty),
                     GitHubConstants.ClosedIssuesSectionTitleTemplate,
                     closedIssues,
-                    milestones);
+                    milestones,
+                    singlePage);
             }
 
             return builder.ToString();
@@ -520,7 +554,8 @@ namespace GitHubHelper
             string issuesTitle,
             string issuesSectionTitleTemplate,
             IEnumerable<IssueInfo> issues,
-            IEnumerable<IGrouping<string, Milestone>> milestones)
+            IEnumerable<IGrouping<string, Milestone>> milestones,
+            bool singlePage)
         {
             builder
                 .AppendLine(issuesTitle)
@@ -543,6 +578,7 @@ namespace GitHubHelper
                 builder
                     .Append(string.Format(
                         issuesSectionTitleTemplate,
+                        singlePage ? "#" : string.Empty,
                         milestonesGroup.Key,
                         milestonesGroup.First().Url));
 

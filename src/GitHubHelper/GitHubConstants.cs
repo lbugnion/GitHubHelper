@@ -2,12 +2,12 @@
 {
     public static class GitHubConstants
     {
-        public const string ReleaseNoteTitleTemplate = "# Release notes for [{0}]({1})";
-        public const string OpenIssuesTitle = "## Known issues (still open)";
-        public const string OpenIssuesSectionTitleTemplate = "### Planned for [{0}]({1})";
+        public const string ReleaseNoteTitleTemplate = "{0}# Release notes for [{1}]({2})";
+        public const string OpenIssuesTitle = "{0}## Known issues (still open)";
+        public const string OpenIssuesSectionTitleTemplate = "{0}### Planned for [{1}]({2})";
         public const string IssueTemplate = "[{0} # {1}]({2}){3}: {4}";
-        public const string ClosedIssuesTitle = "## Closed issues";
-        public const string ClosedIssuesSectionTitleTemplate = "### Fixed issues in [{0}]({1})";
+        public const string ClosedIssuesTitle = "{0}## Closed issues";
+        public const string ClosedIssuesSectionTitleTemplate = "{0}### Fixed issues in [{1}]({2})";
         public const string ClosedOn = " *(closed on {0:dd MMM yyyy})*";
         public const string Open = " *(open)*";
         public const string PlannedFor = "*(planned for {0:dd MMM yyyy})*";

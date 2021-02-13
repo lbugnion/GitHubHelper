@@ -12,12 +12,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Laurent Bugnion</Authors>
-    <PackageId>GalaSoft.GitHubHelper</PackageId>
-    <PackageProjectUrl>https://github.com/lbugnion/GitHubHelper/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/lbugnion/GitHubHelper/</RepositoryUrl>
-    <PackageReleaseNotes>https://github.com/lbugnion/GitHubHelper/release-notes.md</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

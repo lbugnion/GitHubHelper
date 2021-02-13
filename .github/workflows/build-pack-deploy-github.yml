@@ -1,4 +1,4 @@
-name: Build and publish to Nuget on GitHub
+name: Build and publish to Nuget on GitHub packages
 
 on:
   push:

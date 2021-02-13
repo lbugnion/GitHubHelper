@@ -1,0 +1,31 @@
+name: Build and publish to Nuget on GitHub
+
+on:
+  push:
+    branches: [ V1 ]
+  pull_request:
+    branches: [ V1 ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+    - name: Package
+      run: dotnet pack -c Release -o nupkg
+    - name: Publish Nuget to GitHub registry
+      run: dotnet nuget push ./GitHubHelper/nupkg/*.nupkg -k ${GITHUB_TOKEN} -s https://nuget.pkg.github.com/lbugnion/index.json --skip-duplicate --no-symbols 
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

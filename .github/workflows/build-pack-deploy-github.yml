@@ -3,8 +3,12 @@ name: Build and publish to Nuget on GitHub packages
 on:
   push:
     branches: [ V1 ]
+    paths:
+    - 'src/GitHubHelper/**'
   pull_request:
     branches: [ V1 ]
+    paths:
+    - 'src/GitHubHelper/**'
 
   workflow_dispatch:
 

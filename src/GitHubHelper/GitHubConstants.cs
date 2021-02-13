@@ -11,8 +11,9 @@
         public const string ClosedOn = " *(closed on {0:dd MMM yyyy})*";
         public const string Open = " *(open)*";
         public const string PlannedFor = "*(planned for {0:dd MMM yyyy})*";
-        public const string ReleaseNoteUriTemplate = "https://github.com/{0}/{1}/blob/main/{2}";
-        public const string ReleaseNotePageNameTemplate = "release-notes-{0}.md";
+        public const string ReleaseNoteUriTemplate = "https://github.com/{0}/{1}/blob/{2}/{3}";
+        public const string ReleaseNotePageNameTemplate = "release-notes{0}{1}.md";
         public const string ProjectUrlTemplate = "https://github.com/{0}/{1}/projects/{2}";
+        public const string RepoUrlTemplate = "https://github.com/{0}/{1}";
     }
 }

@@ -4,6 +4,12 @@ namespace GitHubHelper
 {
     public class ReleaseNotesPageInfo
     {
+        public bool IsMainPage
+        {
+            get;
+            set;
+        }
+
         public string Project
         {
             get;

@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("0.1.*")]
+[assembly: AssemblyVersion("0.2.*")]
 
 namespace GitHubHelper
 {
@@ -295,12 +295,12 @@ namespace GitHubHelper
         public async Task<ReleaseNotesResult> CreateReleaseNotesMarkdown(
             string accountName,
             string repoName,
+            string branchName,
             IList<ReleaseNotesPageInfo> createFor,
             IList<string> forMilestones,
             string token)
         {
             var result = new ReleaseNotesResult();
-
             var issuesResult = await GetIssues(accountName, repoName, token);
 
             if (!string.IsNullOrEmpty(issuesResult.ErrorMessage))
@@ -331,8 +331,20 @@ namespace GitHubHelper
 
             result.CreatedPages = new List<ReleaseNotesPageInfo>();
 
-            foreach (var page in createFor)
+            foreach (var page in createFor.Where(p => !p.IsMainPage))
             {
+                page.FilePath = string.Format(
+                    GitHubConstants.ReleaseNotePageNameTemplate,
+                    "-",
+                    page.Project.MakeSafeName());
+
+                page.Url = string.Format(
+                    GitHubConstants.ReleaseNoteUriTemplate,
+                    accountName,
+                    repoName,
+                    branchName,
+                    page.FilePath);
+
                 var issuesForPage = issuesResult.Issues
                     .Where(i => i.Projects.Contains(page.Project))
                     .ToList();
@@ -344,7 +356,7 @@ namespace GitHubHelper
 
                 result.CreatedPages.Add(page);
 
-                var markdown = CreatePageFor(
+                page.Markdown = CreateReleaseNotesPageFor(
                     accountName,
                     repoName,
                     page.Project,
@@ -352,24 +364,80 @@ namespace GitHubHelper
                     issuesForPage,
                     forMilestones,
                     page.Header);
+            }
 
-                page.FilePath = string.Format(
+            var mainPage = createFor.FirstOrDefault(p => p.IsMainPage);
+
+            if (mainPage != null)
+            {
+                result.CreatedPages.Add(mainPage);
+
+                mainPage.FilePath = string.Format(
                     GitHubConstants.ReleaseNotePageNameTemplate,
-                    page.Project.MakeSafeName());
+                    string.Empty,
+                    string.Empty);
 
-                page.Markdown = markdown;
-
-                page.Url = string.Format(
+                mainPage.Url = string.Format(
                     GitHubConstants.ReleaseNoteUriTemplate,
                     accountName,
                     repoName,
-                    page.FilePath);
+                    branchName,
+                    mainPage.FilePath);
+
+                mainPage.Markdown = CreateReleaseNotesPageForMain(
+                    accountName,
+                    repoName,
+                    mainPage.Project,
+                    createFor.Where(p => !p.IsMainPage),
+                    mainPage.Header);
             }
 
             return result;
         }
 
-        private string CreatePageFor(
+        private string CreateReleaseNotesPageForMain(
+            string accountName,
+            string repoName,
+            string projectName,
+            IEnumerable<ReleaseNotesPageInfo> projectPages, 
+            IList<string> header)
+        {
+            var builder = new StringBuilder()
+                .AppendLine(
+                    string.Format(
+                        GitHubConstants.ReleaseNoteTitleTemplate,
+                        projectName,
+                        string.Format(
+                            GitHubConstants.RepoUrlTemplate,
+                            accountName,
+                            repoName)))
+                .AppendLine();
+
+            if (header != null)
+            {
+                foreach (var line in header)
+                {
+                    builder
+                        .AppendLine(line)
+                        .AppendLine();
+                }
+            }
+
+            builder
+                .AppendLine("## Projects in this repo")
+                .AppendLine();
+
+            foreach (var page in projectPages)
+            {
+                builder
+                    .AppendLine($"- [{page.Project}]({page.Url})");
+            }
+
+            builder.AppendLine();
+            return builder.ToString();
+        }
+
+        private string CreateReleaseNotesPageFor(
             string accountName,
             string repoName,
             string projectName,

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+      <id>GalaSoft.GitHubHelper</id>
+      <version>0.1</version>
+      <versionSuffix>beta</versionSuffix>
+      <title>GitHubHelper by GalaSoft Laurent Bugnion</title>
+      <authors>Laurent Bugnion (GalaSoft)</authors>
+      <owners>Laurent Bugnion (GalaSoft)</owners>
+      <licenseUrl>https://github.com/lbugnion/mvvmlight/blob/master/LICENSE</licenseUrl>
+      <projectUrl>https://github.com/lbugnion/GitHubHelper</projectUrl>
+      <requireLicenseAcceptance>true</requireLicenseAcceptance>
+      <description>A helper library to perform GitHub operations in dotnet.</description>
+      <releaseNotes>https://github.com/lbugnion/GitHubHelper/blob/main/release-notes.md</releaseNotes>
+      <copyright>Copyright 2021 Laurent Bugnion (GalaSoft)</copyright>
+  </metadata>
+
+  <files>
+      <file src=".\bin\Release\netcoreapp3.1\GitHubHelper.dll" target="lib\netcoreapp3.1\GitHubHelper.dll" />
+  </files>
+</package>

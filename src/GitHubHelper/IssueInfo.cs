@@ -76,7 +76,7 @@ namespace GitHubHelper
 
                 return DateTime.ParseExact(
                     ClosedAt,
-                    GitHubHelper.GitHubDateTimeFormat,
+                    GitHubConstants.GitHubDateTimeFormat,
                     CultureInfo.InvariantCulture);
             }
         }

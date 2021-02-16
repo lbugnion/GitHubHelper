@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Deterministic>false</Deterministic>
@@ -12,5 +12,24 @@
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>GalaSoft.GitHubHelper</PackageId>
+    <Authors>Laurent Bugnion (Laurent@galasoft.ch)</Authors>
+    <VersionPrefix>0.1</VersionPrefix>
+    <VersionSuffix>beta</VersionSuffix>
+    <Title>GitHubHelper by GalaSoft Laurent Bugnion</Title>
+    <Description>A helper library to perform GitHub operations in dotnet.</Description>
+    <Copyright>2021 Laurent Bugnion</Copyright>
+    <RequireLicenseAcceptance>True</RequireLicenseAcceptance>
+    <LicenseExpression>MIT</LicenseExpression>
+    <ProjectUrl>https://github.com/lbugnion/GitHubHelper</ProjectUrl>
+    <ReleaseNotes>See https://github.com/lbugnion/GitHubHelper/blob/main/release-notes.md</ReleaseNotes>
+    <RepositoryUrl>https://github.com/lbugnion/GitHubHelper.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+  </PropertyGroup>
 
 </Project>

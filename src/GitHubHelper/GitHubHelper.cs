@@ -11,24 +11,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("0.2.*")]
+[assembly: AssemblyVersion("1.0.*")]
 
 namespace GitHubHelper
 {
     // See http://www.levibotelho.com/development/commit-a-file-with-the-github-api/
     public class GitHubHelper
     {
-        private const string CommitUrl = "git/commits";
-        private const string CreateNewBranchUrl = "git/refs";
-        private const string CreateTreeUrl = "git/trees";
-        private const string GetHeadUrl = "git/ref/heads/{0}";
-        private const string GetMarkdownFileUrl = "contents/{0}?ref={1}";
-        private const string GitHubApiBaseUrlMask = "https://api.github.com/repos/{0}/{1}/{2}";
-        private const string UpdateReferenceUrl = "git/refs/heads/{0}";
-        private const string IssuesUrl = "issues?state=all&per_page=100"; // TODO Implement paging for issues
-        private const string UploadBlobUrl = "git/blobs";
-        private const string AcceptHeader = "application/vnd.github.v3+json";
-        internal const string GitHubDateTimeFormat = "yyyy-MM-ddTHH:mm:ssZ";
         private readonly HttpClient _client;
 
         public GitHubHelper()
@@ -93,10 +82,10 @@ namespace GitHubHelper
                 jsonRequest = JsonConvert.SerializeObject(uploadInfo);
 
                 var uploadBlobUrl = string.Format(
-                    GitHubApiBaseUrlMask,
+                    GitHubConstants.GitHubApiBaseUrlMask,
                     accountName,
                     repoName,
-                    UploadBlobUrl);
+                    GitHubConstants.UploadBlobUrl);
 
                 var uploadBlobRequest = new HttpRequestMessage
                 {
@@ -106,7 +95,8 @@ namespace GitHubHelper
                 };
 
                 uploadBlobRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
-                uploadBlobRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+                uploadBlobRequest.Headers.Accept.Add(
+                    new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
                 var uploadBlobResponse = await _client.SendAsync(uploadBlobRequest);
 
@@ -149,10 +139,10 @@ namespace GitHubHelper
             jsonRequest = JsonConvert.SerializeObject(newTreeInfo);
 
             var url = string.Format(
-                GitHubApiBaseUrlMask,
+                GitHubConstants.GitHubApiBaseUrlMask,
                 accountName,
                 repoName,
-                CreateTreeUrl);
+                GitHubConstants.CreateTreeUrl);
 
             var request = new HttpRequestMessage
             {
@@ -162,7 +152,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             var response = await _client.SendAsync(request);
 
@@ -199,10 +190,10 @@ namespace GitHubHelper
             jsonRequest = JsonConvert.SerializeObject(commitInfo);
 
             url = string.Format(
-                GitHubApiBaseUrlMask,
+                GitHubConstants.GitHubApiBaseUrlMask,
                 accountName,
                 repoName,
-                CommitUrl);
+                GitHubConstants.CommitUrl);
 
             request = new HttpRequestMessage
             {
@@ -212,7 +203,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             response = await _client.SendAsync(request);
 
@@ -245,10 +237,10 @@ namespace GitHubHelper
             jsonRequest = JsonConvert.SerializeObject(updateReferenceInfo);
 
             url = string.Format(
-                GitHubApiBaseUrlMask,
+                GitHubConstants.GitHubApiBaseUrlMask,
                 accountName,
                 repoName,
-                string.Format(UpdateReferenceUrl, branchName));
+                string.Format(GitHubConstants.UpdateReferenceUrl, branchName));
 
             request = new HttpRequestMessage
             {
@@ -258,7 +250,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             response = await _client.SendAsync(request);
 
@@ -496,6 +489,29 @@ namespace GitHubHelper
                 }
             }
 
+            foreach (var issue in issuesForPage.Where(i => i.Milestone == null))
+            {
+                issue.Milestone = new Milestone
+                {
+                    Title = "No milestone set"
+                };
+
+                if (issue.ClosedLocal > DateTime.MinValue)
+                {
+                    issue.Milestone.Url = string.Format(
+                        GitHubConstants.GitHubClosedIssuesUrl, 
+                        accountName, 
+                        repoName);
+                }
+                else
+                {
+                    issue.Milestone.Url = string.Format(
+                        GitHubConstants.GitHubOpenIssuesUrl, 
+                        accountName, 
+                        repoName);
+                }
+            }
+
             var openIssues = issuesForPage
                 .Where(i => i.State == IssueState.Open)
                 .ToList();
@@ -575,12 +591,26 @@ namespace GitHubHelper
                     continue;
                 }
 
-                builder
-                    .Append(string.Format(
-                        issuesSectionTitleTemplate,
-                        singlePage ? "#" : string.Empty,
-                        milestonesGroup.Key,
-                        milestonesGroup.First().Url));
+                var url = milestonesGroup.First().Url;
+
+                if (string.IsNullOrEmpty(url))
+                {
+                    builder
+                        .Append(string.Format(
+                            issuesSectionTitleTemplate,
+                            singlePage ? "#" : string.Empty,
+                            milestonesGroup.Key,
+                            url));
+                }
+                else
+                {
+                    builder
+                        .Append(string.Format(
+                            issuesSectionTitleTemplate,
+                            singlePage ? "#" : string.Empty,
+                            milestonesGroup.Key,
+                            url));
+                }
 
                 if (milestonesGroup.First().ClosedLocal > DateTime.MinValue)
                 {
@@ -639,15 +669,15 @@ namespace GitHubHelper
             {
                 RequestUri = new Uri(
                     string.Format(
-                        GitHubApiBaseUrlMask,
+                        GitHubConstants.GitHubApiBaseUrlMask,
                         accountName,
                         repoName,
-                        IssuesUrl)),
+                        GitHubConstants.IssuesUrl)),
                 Method = HttpMethod.Get
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             var response = await _client.SendAsync(request);
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -683,7 +713,11 @@ namespace GitHubHelper
 
             var jsonRequest = JsonConvert.SerializeObject(newBranchRequestBody);
 
-            var url = string.Format(GitHubApiBaseUrlMask, accountName, repoName, CreateNewBranchUrl);
+            var url = string.Format(
+                GitHubConstants.GitHubApiBaseUrlMask, 
+                accountName, 
+                repoName,
+                GitHubConstants.CreateNewBranchUrl);
             var request = new HttpRequestMessage
             {
                 RequestUri = new Uri(url),
@@ -692,7 +726,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             var response = await _client.SendAsync(request);
 
@@ -718,10 +753,10 @@ namespace GitHubHelper
             string token)
         {
             var url = string.Format(
-                GitHubApiBaseUrlMask,
+                GitHubConstants.GitHubApiBaseUrlMask,
                 accountName,
                 repoName,
-                string.Format(GetHeadUrl, branchName));
+                string.Format(GitHubConstants.GetHeadUrl, branchName));
 
             var request = new HttpRequestMessage
             {
@@ -730,7 +765,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             var response = await _client.SendAsync(request);
 
@@ -771,7 +807,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             var response = await _client.SendAsync(request);
 
@@ -807,8 +844,8 @@ namespace GitHubHelper
             string filePathWithExtension,
             string githubToken)
         {
-            var getFileUrl = string.Format(GetMarkdownFileUrl, filePathWithExtension, branchName);
-            var url = string.Format(GitHubApiBaseUrlMask, accountName, repoName, getFileUrl);
+            var getFileUrl = string.Format(GitHubConstants.GetMarkdownFileUrl, filePathWithExtension, branchName);
+            var url = string.Format(GitHubConstants.GitHubApiBaseUrlMask, accountName, repoName, getFileUrl);
 
             var request = new HttpRequestMessage
             {
@@ -817,7 +854,8 @@ namespace GitHubHelper
             };
 
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(AcceptHeader));
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
             var response = await _client.SendAsync(request);
             var responseText = await response.Content.ReadAsStringAsync();

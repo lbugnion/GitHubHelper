@@ -38,7 +38,7 @@ namespace GitHubHelper
 
                 return DateTime.ParseExact(
                     DueOn,
-                    GitHubHelper.GitHubDateTimeFormat,
+                    GitHubConstants.GitHubDateTimeFormat,
                     CultureInfo.InvariantCulture);
             }
         }
@@ -68,7 +68,7 @@ namespace GitHubHelper
 
                 return DateTime.ParseExact(
                     ClosedAt,
-                    GitHubHelper.GitHubDateTimeFormat,
+                    GitHubConstants.GitHubDateTimeFormat,
                     CultureInfo.InvariantCulture);
             }
         }

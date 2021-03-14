@@ -6,17 +6,28 @@ namespace GitHubHelper.Model
 {
     public class Milestone
     {
-        [JsonProperty("html_url")]
-        public string Url
+        [JsonProperty("closed_at")]
+        public string ClosedAt
         {
             get;
             set;
         }
 
-        public string Title
+        [JsonIgnore]
+        public DateTime ClosedLocal
         {
-            get;
-            set;
+            get
+            {
+                if (string.IsNullOrEmpty(ClosedAt))
+                {
+                    return DateTime.MinValue;
+                }
+
+                return DateTime.ParseExact(
+                    ClosedAt,
+                    GitHubConstants.GitHubDateTimeFormat,
+                    CultureInfo.InvariantCulture);
+            }
         }
 
         [JsonProperty("due_on")]
@@ -43,34 +54,23 @@ namespace GitHubHelper.Model
             }
         }
 
-        [JsonProperty("closed_at")]
-        public string ClosedAt
-        {
-            get;
-            set;
-        }
-
         public IssueState State
         {
             get;
             set;
         }
 
-        [JsonIgnore]
-        public DateTime ClosedLocal
+        public string Title
         {
-            get
-            {
-                if (string.IsNullOrEmpty(ClosedAt))
-                {
-                    return DateTime.MinValue;
-                }
+            get;
+            set;
+        }
 
-                return DateTime.ParseExact(
-                    ClosedAt,
-                    GitHubConstants.GitHubDateTimeFormat,
-                    CultureInfo.InvariantCulture);
-            }
+        [JsonProperty("html_url")]
+        public string Url
+        {
+            get;
+            set;
         }
     }
 }

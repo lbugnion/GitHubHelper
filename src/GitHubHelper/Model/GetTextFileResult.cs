@@ -5,6 +5,20 @@ namespace GitHubHelper.Model
 {
     public class GetTextFileResult : ErrorResult
     {
+        [JsonProperty("content")]
+        public string EncodedContent
+        {
+            get;
+            set;
+        }
+
+        [JsonProperty("html_url")]
+        public string HtmlUrl
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("name")]
         public string Name
         {
@@ -19,22 +33,8 @@ namespace GitHubHelper.Model
             set;
         }
 
-        [JsonProperty("html_url")]
-        public string HtmlUrl
-        {
-            get;
-            set;
-        }
-
-        [JsonProperty("type")]
-        public string Type
-        {
-            get;
-            set;
-        }
-
-        [JsonProperty("content")]
-        public string EncodedContent
+        [JsonIgnore]
+        public HttpStatusCode StatusCode
         {
             get;
             set;
@@ -47,8 +47,8 @@ namespace GitHubHelper.Model
             set;
         }
 
-        [JsonIgnore]
-        public HttpStatusCode StatusCode
+        [JsonProperty("type")]
+        public string Type
         {
             get;
             set;

@@ -4,18 +4,6 @@ namespace GitHubHelper.Model
 {
     public class ReleaseNotesPageInfo
     {
-        public bool IsMainPage
-        {
-            get;
-            set;
-        }
-
-        public string Project
-        {
-            get;
-            set;
-        }
-
         public string FilePath
         {
             get;
@@ -28,19 +16,31 @@ namespace GitHubHelper.Model
             set;
         }
 
+        public bool IsMainPage
+        {
+            get;
+            set;
+        }
+
         public string Markdown
         {
             get;
             set;
         }
 
-        public string Url
+        public string Project
         {
             get;
             set;
         }
 
         public int ProjectId
+        {
+            get;
+            set;
+        }
+
+        public string Url
         {
             get;
             set;

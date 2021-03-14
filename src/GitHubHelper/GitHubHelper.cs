@@ -32,8 +32,269 @@ namespace GitHubHelper
             _client = client;
         }
 
-        public async Task<GetHeadResult> CommitFiles(
+        private void BuildIssuesSection(
+            StringBuilder builder,
+            string projectName,
+            IList<string> forMilestones,
+            string issuesTitle,
+            string issuesSectionTitleTemplate,
+            IEnumerable<IssueInfo> issues,
+            IEnumerable<IGrouping<string, Milestone>> milestones,
+            bool singlePage)
+        {
+            builder
+                .AppendLine(issuesTitle)
+                .AppendLine();
+
+            foreach (var milestonesGroup in milestones)
+            {
+                var relevantIssues = issues
+                    .Where(i => i.Milestone.Title == milestonesGroup.Key)
+                    .OrderByDescending(i => i.Number)
+                    .ToList();
+
+                if (forMilestones != null
+                    && !forMilestones.Contains(milestonesGroup.Key)
+                    || relevantIssues.Count == 0)
+                {
+                    continue;
+                }
+
+                var url = milestonesGroup.First().Url;
+
+                if (string.IsNullOrEmpty(url))
+                {
+                    builder
+                        .Append(string.Format(
+                            issuesSectionTitleTemplate,
+                            singlePage ? "#" : string.Empty,
+                            milestonesGroup.Key,
+                            url));
+                }
+                else
+                {
+                    builder
+                        .Append(string.Format(
+                            issuesSectionTitleTemplate,
+                            singlePage ? "#" : string.Empty,
+                            milestonesGroup.Key,
+                            url));
+                }
+
+                if (milestonesGroup.First().ClosedLocal > DateTime.MinValue)
+                {
+                    builder
+                        .AppendLine(
+                            string.Format(
+                                GitHubConstants.ClosedOn,
+                                milestonesGroup.First().ClosedLocal))
+                        .AppendLine();
+                }
+                else
+                {
+                    builder
+                        .AppendLine(GitHubConstants.Open)
+                        .AppendLine();
+                }
+
+                foreach (var issue in relevantIssues)
+                {
+                    var labels = string.Concat(
+                        issue.Labels
+                            .Where(l => l.Name != projectName)
+                            .Select(l => l.Name + ", "));
+
+                    labels = labels.Substring(0, labels.Length - 2);
+
+                    var status = GitHubConstants.Open;
+
+                    if (issue.ClosedLocal > DateTime.MinValue)
+                    {
+                        status = string.Format(
+                            GitHubConstants.ClosedOn,
+                            milestonesGroup.First().ClosedLocal);
+                    }
+
+                    builder
+                        .AppendLine(
+                            string.Format(
+                                GitHubConstants.IssueTemplate,
+                                labels,
+                                issue.Number,
+                                issue.Url,
+                                status,
+                                issue.Title))
+                        .AppendLine();
+                }
+            }
+        }
+
+        private string CreateReleaseNotesPageFor(
             string accountName,
+            string repoName,
+            string projectName,
+            int projectId,
+            IList<IssueInfo> issuesForPage,
+            IList<string> forMilestones,
+            IList<string> header,
+            bool singlePage)
+        {
+            var builder = new StringBuilder()
+                .AppendLine(
+                    string.Format(
+                        GitHubConstants.ReleaseNoteTitleTemplate,
+                        singlePage ? "#" : string.Empty,
+                        projectName,
+                        string.Format(
+                            GitHubConstants.ProjectUrlTemplate,
+                            accountName,
+                            repoName,
+                            projectId)))
+                .AppendLine();
+
+            if (header != null)
+            {
+                foreach (var line in header)
+                {
+                    builder
+                        .AppendLine(line)
+                        .AppendLine();
+                }
+            }
+
+            foreach (var issue in issuesForPage.Where(i => i.Milestone == null))
+            {
+                issue.Milestone = new Milestone
+                {
+                    Title = "No milestone set"
+                };
+
+                if (issue.ClosedLocal > DateTime.MinValue)
+                {
+                    issue.Milestone.Url = string.Format(
+                        GitHubConstants.GitHubClosedIssuesUrl,
+                        accountName,
+                        repoName);
+                }
+                else
+                {
+                    issue.Milestone.Url = string.Format(
+                        GitHubConstants.GitHubOpenIssuesUrl,
+                        accountName,
+                        repoName);
+                }
+            }
+
+            var openIssues = issuesForPage
+                .Where(i => i.State == IssueState.Open)
+                .ToList();
+
+            if (openIssues.Count > 0)
+            {
+                var milestones = openIssues
+                    .Select(i => i.Milestone)
+                    .OrderBy(m => m.DueOnLocal)
+                    .GroupBy(m => m.Title);
+
+                BuildIssuesSection(
+                    builder,
+                    projectName,
+                    forMilestones,
+                    string.Format(
+                        GitHubConstants.OpenIssuesTitle,
+                        singlePage ? "#" : string.Empty),
+                    GitHubConstants.OpenIssuesSectionTitleTemplate,
+                    openIssues,
+                    milestones,
+                    singlePage);
+            }
+
+            var closedIssues = issuesForPage
+                .Where(i => i.State == IssueState.Closed)
+                .ToList();
+
+            if (closedIssues.Count > 0)
+            {
+                var milestones = closedIssues
+                    .Select(i => i.Milestone)
+                    .OrderByDescending(m => m.ClosedLocal)
+                    .GroupBy(m => m.Title);
+
+                BuildIssuesSection(
+                    builder,
+                    projectName,
+                    forMilestones,
+                    string.Format(
+                        GitHubConstants.ClosedIssuesTitle,
+                        singlePage ? "#" : string.Empty),
+                    GitHubConstants.ClosedIssuesSectionTitleTemplate,
+                    closedIssues,
+                    milestones,
+                    singlePage);
+            }
+
+            return builder.ToString();
+        }
+
+        private string CreateReleaseNotesPageForMain(
+            string accountName,
+            string repoName,
+            string projectName,
+            IEnumerable<ReleaseNotesPageInfo> projectPages,
+            IList<string> header,
+            bool singlePage)
+        {
+            var builder = new StringBuilder()
+                .AppendLine(
+                    string.Format(
+                        GitHubConstants.ReleaseNoteTitleTemplate,
+                        string.Empty,
+                        projectName,
+                        string.Format(
+                            GitHubConstants.RepoUrlTemplate,
+                            accountName,
+                            repoName)))
+                .AppendLine();
+
+            if (header != null)
+            {
+                foreach (var line in header)
+                {
+                    builder
+                        .AppendLine(line)
+                        .AppendLine();
+                }
+            }
+
+            if (singlePage)
+            {
+                foreach (var page in projectPages)
+                {
+                    builder
+                        .AppendLine(page.Markdown)
+                        .AppendLine();
+                }
+            }
+            else
+            {
+                builder
+                    .AppendLine("## Projects in this repo")
+                    .AppendLine();
+
+                foreach (var page in projectPages)
+                {
+                    builder
+                        .AppendLine($"- [{page.Project}]({page.Url})");
+                }
+
+                builder.AppendLine();
+            }
+
+            return builder.ToString();
+        }
+
+        public async Task<GetHeadResult> CommitFiles(
+                                    string accountName,
             string repoName,
             string branchName,
             string githubToken,
@@ -281,9 +542,57 @@ namespace GitHubHelper
             return headResult;
         }
 
+        public async Task<GetHeadResult> CreateNewBranch(
+                    string accountName,
+                    string repoName,
+                    string token,
+                    GetHeadResult mainHead,
+                    string newBranchName = null)
+        {
+            var newBranchRequestBody = new NewBranchInfo
+            {
+                Sha = mainHead.Object.Sha,
+                Ref = string.Format(NewBranchInfo.RefMask, newBranchName)
+            };
+
+            var jsonRequest = JsonConvert.SerializeObject(newBranchRequestBody);
+
+            var url = string.Format(
+                GitHubConstants.GitHubApiBaseUrlMask,
+                accountName,
+                repoName,
+                GitHubConstants.CreateNewBranchUrl);
+            var request = new HttpRequestMessage
+            {
+                RequestUri = new Uri(url),
+                Method = HttpMethod.Post,
+                Content = new StringContent(jsonRequest)
+            };
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Accept.Add(
+                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
+
+            var response = await _client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
+            {
+                var errorResultJson = await response.Content.ReadAsStringAsync();
+                var errorResult = JsonConvert.DeserializeObject<ErrorResult>(errorResultJson);
+                return new GetHeadResult
+                {
+                    ErrorMessage = $"Error when creating new branch: {newBranchName} / {errorResult.ErrorMessage}"
+                };
+            }
+
+            var jsonResult = await response.Content.ReadAsStringAsync();
+            var createNewBranchResult = JsonConvert.DeserializeObject<GetHeadResult>(jsonResult);
+            return createNewBranchResult;
+        }
+
         /// <summary>
         /// At the moment, this method creates release notes with the name "release-note-label.md"
-        /// at the root of the repository only. "label" corresponds to the 
+        /// at the root of the repository only. "label" corresponds to the
         /// labels passed in the createFor parameter, but URL encoded.
         /// </summary>
         public async Task<ReleaseNotesResult> CreateReleaseNotesMarkdown(
@@ -400,353 +709,6 @@ namespace GitHubHelper
             return result;
         }
 
-        private string CreateReleaseNotesPageForMain(
-            string accountName,
-            string repoName,
-            string projectName,
-            IEnumerable<ReleaseNotesPageInfo> projectPages, 
-            IList<string> header,
-            bool singlePage)
-        {   
-            var builder = new StringBuilder()
-                .AppendLine(
-                    string.Format(
-                        GitHubConstants.ReleaseNoteTitleTemplate,
-                        string.Empty,
-                        projectName,
-                        string.Format(
-                            GitHubConstants.RepoUrlTemplate,
-                            accountName,
-                            repoName)))
-                .AppendLine();
-
-            if (header != null)
-            {
-                foreach (var line in header)
-                {
-                    builder
-                        .AppendLine(line)
-                        .AppendLine();
-                }
-            }
-
-            if (singlePage)
-            {
-                foreach (var page in projectPages)
-                {
-                    builder
-                        .AppendLine(page.Markdown)
-                        .AppendLine();
-                }
-            }
-            else
-            {
-                builder
-                    .AppendLine("## Projects in this repo")
-                    .AppendLine();
-
-                foreach (var page in projectPages)
-                {
-                    builder
-                        .AppendLine($"- [{page.Project}]({page.Url})");
-                }
-
-                builder.AppendLine();
-            }
-
-            return builder.ToString();
-        }
-
-        private string CreateReleaseNotesPageFor(
-            string accountName,
-            string repoName,
-            string projectName,
-            int projectId,
-            IList<IssueInfo> issuesForPage,
-            IList<string> forMilestones,
-            IList<string> header,
-            bool singlePage)
-        {
-            var builder = new StringBuilder()
-                .AppendLine(
-                    string.Format(
-                        GitHubConstants.ReleaseNoteTitleTemplate,
-                        singlePage ? "#" : string.Empty,
-                        projectName,
-                        string.Format(
-                            GitHubConstants.ProjectUrlTemplate,
-                            accountName,
-                            repoName,
-                            projectId)))
-                .AppendLine();
-
-            if (header != null)
-            {
-                foreach (var line in header)
-                {
-                    builder
-                        .AppendLine(line)
-                        .AppendLine();
-                }
-            }
-
-            foreach (var issue in issuesForPage.Where(i => i.Milestone == null))
-            {
-                issue.Milestone = new Milestone
-                {
-                    Title = "No milestone set"
-                };
-
-                if (issue.ClosedLocal > DateTime.MinValue)
-                {
-                    issue.Milestone.Url = string.Format(
-                        GitHubConstants.GitHubClosedIssuesUrl, 
-                        accountName, 
-                        repoName);
-                }
-                else
-                {
-                    issue.Milestone.Url = string.Format(
-                        GitHubConstants.GitHubOpenIssuesUrl, 
-                        accountName, 
-                        repoName);
-                }
-            }
-
-            var openIssues = issuesForPage
-                .Where(i => i.State == IssueState.Open)
-                .ToList();
-
-            if (openIssues.Count > 0)
-            {
-                var milestones = openIssues
-                    .Select(i => i.Milestone)
-                    .OrderBy(m => m.DueOnLocal)
-                    .GroupBy(m => m.Title);
-
-                BuildIssuesSection(
-                    builder,
-                    projectName,
-                    forMilestones,
-                    string.Format(
-                        GitHubConstants.OpenIssuesTitle,
-                        singlePage ? "#" : string.Empty),
-                    GitHubConstants.OpenIssuesSectionTitleTemplate,
-                    openIssues,
-                    milestones,
-                    singlePage);
-            }
-
-            var closedIssues = issuesForPage
-                .Where(i => i.State == IssueState.Closed)
-                .ToList();
-
-            if (closedIssues.Count > 0)
-            {
-                var milestones = closedIssues
-                    .Select(i => i.Milestone)
-                    .OrderByDescending(m => m.ClosedLocal)
-                    .GroupBy(m => m.Title);
-
-                BuildIssuesSection(
-                    builder,
-                    projectName,
-                    forMilestones,
-                    string.Format(
-                        GitHubConstants.ClosedIssuesTitle,
-                        singlePage ? "#" : string.Empty),
-                    GitHubConstants.ClosedIssuesSectionTitleTemplate,
-                    closedIssues,
-                    milestones,
-                    singlePage);
-            }
-
-            return builder.ToString();
-        }
-
-        private void BuildIssuesSection(
-            StringBuilder builder,
-            string projectName,
-            IList<string> forMilestones,
-            string issuesTitle,
-            string issuesSectionTitleTemplate,
-            IEnumerable<IssueInfo> issues,
-            IEnumerable<IGrouping<string, Milestone>> milestones,
-            bool singlePage)
-        {
-            builder
-                .AppendLine(issuesTitle)
-                .AppendLine();
-
-            foreach (var milestonesGroup in milestones)
-            {
-                var relevantIssues = issues
-                    .Where(i => i.Milestone.Title == milestonesGroup.Key)
-                    .OrderByDescending(i => i.Number)
-                    .ToList();
-
-                if (forMilestones != null
-                    && !forMilestones.Contains(milestonesGroup.Key)
-                    || relevantIssues.Count == 0)
-                {
-                    continue;
-                }
-
-                var url = milestonesGroup.First().Url;
-
-                if (string.IsNullOrEmpty(url))
-                {
-                    builder
-                        .Append(string.Format(
-                            issuesSectionTitleTemplate,
-                            singlePage ? "#" : string.Empty,
-                            milestonesGroup.Key,
-                            url));
-                }
-                else
-                {
-                    builder
-                        .Append(string.Format(
-                            issuesSectionTitleTemplate,
-                            singlePage ? "#" : string.Empty,
-                            milestonesGroup.Key,
-                            url));
-                }
-
-                if (milestonesGroup.First().ClosedLocal > DateTime.MinValue)
-                {
-                    builder
-                        .AppendLine(
-                            string.Format(
-                                GitHubConstants.ClosedOn,
-                                milestonesGroup.First().ClosedLocal))
-                        .AppendLine();
-                }
-                else
-                {
-                    builder
-                        .AppendLine(GitHubConstants.Open)
-                        .AppendLine();
-                }
-
-                foreach (var issue in relevantIssues)
-                {
-                    var labels = string.Concat(
-                        issue.Labels
-                            .Where(l => l.Name != projectName)
-                            .Select(l => l.Name + ", "));
-
-                    labels = labels.Substring(0, labels.Length - 2);
-
-                    var status = GitHubConstants.Open;
-
-                    if (issue.ClosedLocal > DateTime.MinValue)
-                    {
-                        status = string.Format(
-                            GitHubConstants.ClosedOn,
-                            milestonesGroup.First().ClosedLocal);
-                    }
-
-                    builder
-                        .AppendLine(
-                            string.Format(
-                                GitHubConstants.IssueTemplate,
-                                labels,
-                                issue.Number,
-                                issue.Url,
-                                status,
-                                issue.Title))
-                        .AppendLine();
-                }
-            }
-        }
-
-        public async Task<IssueResult> GetIssues(
-            string accountName,
-            string repoName,
-            string token)
-        {
-            var request = new HttpRequestMessage
-            {
-                RequestUri = new Uri(
-                    string.Format(
-                        GitHubConstants.GitHubApiBaseUrlMask,
-                        accountName,
-                        repoName,
-                        GitHubConstants.IssuesUrl)),
-                Method = HttpMethod.Get
-            };
-
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
-
-            var response = await _client.SendAsync(request);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                return new IssueResult
-                {
-                    ErrorMessage = responseContent
-                };
-            }
-
-            var issues = JsonConvert.DeserializeObject<IList<IssueInfo>>(responseContent);
-
-            return new IssueResult
-            {
-                Issues = issues
-            };
-        }
-
-        public async Task<GetHeadResult> CreateNewBranch(
-            string accountName,
-            string repoName,
-            string token,
-            GetHeadResult mainHead,
-            string newBranchName = null)
-        {
-            var newBranchRequestBody = new NewBranchInfo
-            {
-                Sha = mainHead.Object.Sha,
-                Ref = string.Format(NewBranchInfo.RefMask, newBranchName)
-            };
-
-            var jsonRequest = JsonConvert.SerializeObject(newBranchRequestBody);
-
-            var url = string.Format(
-                GitHubConstants.GitHubApiBaseUrlMask, 
-                accountName, 
-                repoName,
-                GitHubConstants.CreateNewBranchUrl);
-            var request = new HttpRequestMessage
-            {
-                RequestUri = new Uri(url),
-                Method = HttpMethod.Post,
-                Content = new StringContent(jsonRequest)
-            };
-
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.Accept.Add(
-                new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
-
-            var response = await _client.SendAsync(request);
-
-            if (response.StatusCode == HttpStatusCode.UnprocessableEntity)
-            {
-                var errorResultJson = await response.Content.ReadAsStringAsync();
-                var errorResult = JsonConvert.DeserializeObject<ErrorResult>(errorResultJson);
-                return new GetHeadResult
-                {
-                    ErrorMessage = $"Error when creating new branch: {newBranchName} / {errorResult.ErrorMessage}"
-                };
-            }
-
-            var jsonResult = await response.Content.ReadAsStringAsync();
-            var createNewBranchResult = JsonConvert.DeserializeObject<GetHeadResult>(jsonResult);
-            return createNewBranchResult;
-        }
-
         public async Task<GetHeadResult> GetHead(
             string accountName,
             string repoName,
@@ -794,6 +756,44 @@ namespace GitHubHelper
             var jsonResult = await response.Content.ReadAsStringAsync();
             var mainHead = JsonConvert.DeserializeObject<GetHeadResult>(jsonResult);
             return mainHead;
+        }
+
+        public async Task<IssueResult> GetIssues(
+                    string accountName,
+            string repoName,
+            string token)
+        {
+            var request = new HttpRequestMessage
+            {
+                RequestUri = new Uri(
+                    string.Format(
+                        GitHubConstants.GitHubApiBaseUrlMask,
+                        accountName,
+                        repoName,
+                        GitHubConstants.IssuesUrl)),
+                Method = HttpMethod.Get
+            };
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
+
+            var response = await _client.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                return new IssueResult
+                {
+                    ErrorMessage = responseContent
+                };
+            }
+
+            var issues = JsonConvert.DeserializeObject<IList<IssueInfo>>(responseContent);
+
+            return new IssueResult
+            {
+                Issues = issues
+            };
         }
 
         public async Task<CommitResult> GetMainCommit(

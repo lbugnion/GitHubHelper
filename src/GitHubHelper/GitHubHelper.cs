@@ -1,4 +1,5 @@
-﻿using GitHubHelper.Utilities;
+﻿using GitHubHelper.Model;
+using GitHubHelper.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

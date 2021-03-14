@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 
-namespace GitHubHelper
+namespace GitHubHelper.Model
 {
-    public class IssueInfo
+    public class Milestone
     {
         [JsonProperty("html_url")]
         public string Url
@@ -14,13 +13,38 @@ namespace GitHubHelper
             set;
         }
 
-        public int Number
+        public string Title
         {
             get;
             set;
         }
 
-        public string Title
+        [JsonProperty("due_on")]
+        public string DueOn
+        {
+            get;
+            set;
+        }
+
+        [JsonIgnore]
+        public DateTime DueOnLocal
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(DueOn))
+                {
+                    return DateTime.MinValue;
+                }
+
+                return DateTime.ParseExact(
+                    DueOn,
+                    GitHubConstants.GitHubDateTimeFormat,
+                    CultureInfo.InvariantCulture);
+            }
+        }
+
+        [JsonProperty("closed_at")]
+        public string ClosedAt
         {
             get;
             set;
@@ -33,38 +57,6 @@ namespace GitHubHelper
         }
 
         [JsonIgnore]
-        public IList<string> Projects
-        {
-            get;
-            set;
-        }
-
-        public IList<IssueLabel> Labels
-        {
-            get;
-            set;
-        }
-
-        public Milestone Milestone
-        {
-            get;
-            set;
-        }
-
-        [JsonProperty("pull_request")]
-        public PullRequest PullRequest
-        {
-            get;
-            set;
-        }
-
-        [JsonProperty("closed_at")]
-        public string ClosedAt
-        {
-            get;
-            set;
-        }
-
         public DateTime ClosedLocal
         {
             get
@@ -79,11 +71,6 @@ namespace GitHubHelper
                     GitHubConstants.GitHubDateTimeFormat,
                     CultureInfo.InvariantCulture);
             }
-        }
-
-        public override string ToString()
-        {
-            return $"{Number:D2} / {State} / {PullRequest == null} / {Title}";
         }
     }
 }

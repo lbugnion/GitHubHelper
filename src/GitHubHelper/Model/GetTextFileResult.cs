@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Net;
 
-namespace GitHubHelper
+namespace GitHubHelper.Model
 {
     public class GetTextFileResult : ErrorResult
     {

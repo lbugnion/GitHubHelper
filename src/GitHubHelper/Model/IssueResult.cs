@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace GitHubHelper
+namespace GitHubHelper.Model
 {
     public class IssueResult : ErrorResult
     {

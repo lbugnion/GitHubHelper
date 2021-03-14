@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Generic;
 
-namespace GitHubHelper
+namespace GitHubHelper.Model
 {
     public class CommitInfo
     {

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace GitHubHelper
+namespace GitHubHelper.Model
 {
     public class NewBranchInfo : ShaInfo
     {

@@ -1,4 +1,4 @@
-﻿namespace GitHubHelper
+﻿namespace GitHubHelper.Model
 {
     public class IssueLabel
     {

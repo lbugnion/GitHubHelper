@@ -1,0 +1,33 @@
+### Test release notes
+POST http://localhost:7071/api/githubhelper/test/all/singlepage/false
+x-githubhelper-test-token: {{Token}}
+
+{
+    "AccountName": "lbugnion",
+    "RepoName": "timekeeper",
+    "BranchName": "main",
+    "CommitMessage": "Updated release notes",
+    "SinglePage": false,
+    "Projects": [
+        {
+            "Project": "Client",
+            "ProjectId": 1
+        },
+        {
+            "Project": "API",
+            "ProjectId": 2
+        },
+        {
+            "Project": "Infrastructure",
+            "ProjectId": 4
+        },
+        {
+            "Project": "Documentation",
+            "ProjectId": 3
+        },
+        {
+            "Project": "TimeKeeper",
+            "IsMainPage": true
+        }
+    ]
+}

@@ -30,6 +30,24 @@ namespace GitHubHelper.Model
             }
         }
 
+        [JsonIgnore]
+        public bool IsClosed
+        {
+            get
+            {
+                return ClosedLocal >= DateTime.MinValue + TimeSpan.FromDays(1);
+            }
+        }
+
+        [JsonIgnore]
+        public bool IsDue
+        {
+            get
+            {
+                return DueOnLocal >= DateTime.MinValue + TimeSpan.FromDays(1);
+            }
+        }
+
         [JsonProperty("due_on")]
         public string DueOn
         {

@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.1.*")]
 
 namespace GitHubHelper
 {
@@ -50,7 +50,7 @@ namespace GitHubHelper
             {
                 var relevantIssues = issues
                     .Where(i => i.Milestone.Title == milestonesGroup.Key)
-                    .OrderByDescending(i => i.Number)
+                    .OrderBy(i => i.Number)
                     .ToList();
 
                 if (forMilestones != null
@@ -99,12 +99,21 @@ namespace GitHubHelper
 
                 foreach (var issue in relevantIssues)
                 {
-                    var labels = string.Concat(
-                        issue.Labels
-                            .Where(l => l.Name != projectName)
-                            .Select(l => l.Name + ", "));
+                    string labels;
 
-                    labels = labels.Substring(0, labels.Length - 2);
+                    if (issue.Labels.Count == 0)
+                    {
+                        labels = "Issue";
+                    }
+                    else
+                    {
+                        labels = string.Concat(
+                            issue.Labels
+                                .Where(l => l.Name != projectName)
+                                .Select(l => l.Name + ", "));
+
+                        labels = labels.Substring(0, labels.Length - 2);
+                    }
 
                     var status = GitHubConstants.Open;
 
@@ -162,6 +171,9 @@ namespace GitHubHelper
                 }
             }
 
+            var openComparer = new MilestoneComparer(false);
+            var closeComparer = new MilestoneComparer(true);
+
             foreach (var issue in issuesForPage.Where(i => i.Milestone == null))
             {
                 issue.Milestone = new Milestone
@@ -193,7 +205,7 @@ namespace GitHubHelper
             {
                 var milestones = openIssues
                     .Select(i => i.Milestone)
-                    .OrderBy(m => m.DueOnLocal)
+                    .OrderBy(m => m, openComparer)
                     .GroupBy(m => m.Title);
 
                 BuildIssuesSection(
@@ -217,7 +229,7 @@ namespace GitHubHelper
             {
                 var milestones = closedIssues
                     .Select(i => i.Milestone)
-                    .OrderByDescending(m => m.ClosedLocal)
+                    .OrderByDescending(m => m, closeComparer)
                     .GroupBy(m => m.Title);
 
                 BuildIssuesSection(

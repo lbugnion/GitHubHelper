@@ -15,8 +15,7 @@
         public const string GitHubClosedIssuesUrl = "https://github.com/{0}/{1}/issues?q=is%3Aissue+is%3Aclosed";
         public const string GitHubDateTimeFormat = "yyyy-MM-ddTHH:mm:ssZ";
         public const string GitHubOpenIssuesUrl = "https://github.com/{0}/{1}/issues";
-        // TODO Implement paging for issues
-        public const string IssuesUrl = "issues?state=all&per_page=100";
+        public const string IssuesUrl = "issues?state=all&per_page=100&page={0}";
         public const string IssueTemplate = "[{0} # {1}]({2}){3}: {4}";
         public const string Open = " *(open)*";
         public const string OpenIssuesSectionTitleTemplate = "{0}### Planned for [{1}]({2})";

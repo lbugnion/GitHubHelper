@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("1.1.*")]
+[assembly: AssemblyVersion("1.2.*")]
 
 namespace GitHubHelper
 {
@@ -775,37 +775,56 @@ namespace GitHubHelper
             string repoName,
             string token)
         {
-            var request = new HttpRequestMessage
+            var haveMoreIssues = true;
+            var result = new IssueResult
             {
-                RequestUri = new Uri(
-                    string.Format(
-                        GitHubConstants.GitHubApiBaseUrlMask,
-                        accountName,
-                        repoName,
-                        GitHubConstants.IssuesUrl)),
-                Method = HttpMethod.Get
+                Issues = new List<IssueInfo>()
             };
+            var pageIndex = 1;
 
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
-
-            var response = await _client.SendAsync(request);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (response.StatusCode != HttpStatusCode.OK)
+            while (haveMoreIssues)
             {
-                return new IssueResult
+                var request = new HttpRequestMessage
                 {
-                    ErrorMessage = responseContent
+                    RequestUri = new Uri(
+                        string.Format(
+                            GitHubConstants.GitHubApiBaseUrlMask,
+                            accountName,
+                            repoName,
+                            string.Format(GitHubConstants.IssuesUrl, pageIndex++))),
+                    Method = HttpMethod.Get
                 };
+
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
+
+                var response = await _client.SendAsync(request);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    return new IssueResult
+                    {
+                        ErrorMessage = responseContent
+                    };
+                }
+
+                var issues = JsonConvert.DeserializeObject<IList<IssueInfo>>(responseContent);
+
+                if (issues.Count > 0)
+                {
+                    foreach (var issue in issues)
+                    {
+                        result.Issues.Add(issue);
+                    }
+                }
+                else
+                {
+                    haveMoreIssues = false;
+                }
             }
 
-            var issues = JsonConvert.DeserializeObject<IList<IssueInfo>>(responseContent);
-
-            return new IssueResult
-            {
-                Issues = issues
-            };
+            return result;
         }
 
         public async Task<CommitResult> GetMainCommit(

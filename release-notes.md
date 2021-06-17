@@ -6,8 +6,6 @@
 
 #### Planned for [V1.3](https://github.com/lbugnion/GitHubHelper/milestone/4) *(open)*
 
-[enhancement # 2](https://github.com/lbugnion/GitHubHelper/issues/2) *(open)*: Prepare infrastructure to release to Nuget automatically
-
 [enhancement # 3](https://github.com/lbugnion/GitHubHelper/issues/3) *(open)*: Add possibility to specify template for release notes
 
 [enhancement # 4](https://github.com/lbugnion/GitHubHelper/issues/4) *(open)*: Add possibility to specify a different folder for each release note file created
@@ -40,6 +38,11 @@
 
 ## Release notes for [Infrastructure](https://github.com/lbugnion/GitHubHelper/projects/1)
 
-> Nothing found
+### Known issues (still open)
+
+#### Planned for [V1.3](https://github.com/lbugnion/GitHubHelper/milestone/4) *(open)*
+
+[enhancement # 2](https://github.com/lbugnion/GitHubHelper/issues/2) *(open)*: Prepare infrastructure to release to Nuget automatically
+
 
 

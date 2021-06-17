@@ -171,78 +171,85 @@ namespace GitHubHelper
                 }
             }
 
-            var openComparer = new MilestoneComparer(false);
-            var closeComparer = new MilestoneComparer(true);
-
-            foreach (var issue in issuesForPage.Where(i => i.Milestone == null))
+            if (issuesForPage.Count == 0)
             {
-                issue.Milestone = new Milestone
-                {
-                    Title = "No milestone set"
-                };
-
-                if (issue.ClosedLocal > DateTime.MinValue)
-                {
-                    issue.Milestone.Url = string.Format(
-                        GitHubConstants.GitHubClosedIssuesUrl,
-                        accountName,
-                        repoName);
-                }
-                else
-                {
-                    issue.Milestone.Url = string.Format(
-                        GitHubConstants.GitHubOpenIssuesUrl,
-                        accountName,
-                        repoName);
-                }
+                builder.AppendLine("> Nothing found");
             }
-
-            var openIssues = issuesForPage
-                .Where(i => i.State == IssueState.Open)
-                .ToList();
-
-            if (openIssues.Count > 0)
+            else
             {
-                var milestones = openIssues
-                    .Select(i => i.Milestone)
-                    .OrderBy(m => m, openComparer)
-                    .GroupBy(m => m.Title);
+                var openComparer = new MilestoneComparer(false);
+                var closeComparer = new MilestoneComparer(true);
 
-                BuildIssuesSection(
-                    builder,
-                    projectName,
-                    forMilestones,
-                    string.Format(
-                        GitHubConstants.OpenIssuesTitle,
-                        singlePage ? "#" : string.Empty),
-                    GitHubConstants.OpenIssuesSectionTitleTemplate,
-                    openIssues,
-                    milestones,
-                    singlePage);
-            }
+                foreach (var issue in issuesForPage.Where(i => i.Milestone == null))
+                {
+                    issue.Milestone = new Milestone
+                    {
+                        Title = "No milestone set"
+                    };
 
-            var closedIssues = issuesForPage
-                .Where(i => i.State == IssueState.Closed)
-                .ToList();
+                    if (issue.ClosedLocal > DateTime.MinValue)
+                    {
+                        issue.Milestone.Url = string.Format(
+                            GitHubConstants.GitHubClosedIssuesUrl,
+                            accountName,
+                            repoName);
+                    }
+                    else
+                    {
+                        issue.Milestone.Url = string.Format(
+                            GitHubConstants.GitHubOpenIssuesUrl,
+                            accountName,
+                            repoName);
+                    }
+                }
 
-            if (closedIssues.Count > 0)
-            {
-                var milestones = closedIssues
-                    .Select(i => i.Milestone)
-                    .OrderByDescending(m => m, closeComparer)
-                    .GroupBy(m => m.Title);
+                var openIssues = issuesForPage
+                    .Where(i => i.State == IssueState.Open)
+                    .ToList();
 
-                BuildIssuesSection(
-                    builder,
-                    projectName,
-                    forMilestones,
-                    string.Format(
-                        GitHubConstants.ClosedIssuesTitle,
-                        singlePage ? "#" : string.Empty),
-                    GitHubConstants.ClosedIssuesSectionTitleTemplate,
-                    closedIssues,
-                    milestones,
-                    singlePage);
+                if (openIssues.Count > 0)
+                {
+                    var milestones = openIssues
+                        .Select(i => i.Milestone)
+                        .OrderBy(m => m, openComparer)
+                        .GroupBy(m => m.Title);
+
+                    BuildIssuesSection(
+                        builder,
+                        projectName,
+                        forMilestones,
+                        string.Format(
+                            GitHubConstants.OpenIssuesTitle,
+                            singlePage ? "#" : string.Empty),
+                        GitHubConstants.OpenIssuesSectionTitleTemplate,
+                        openIssues,
+                        milestones,
+                        singlePage);
+                }
+
+                var closedIssues = issuesForPage
+                    .Where(i => i.State == IssueState.Closed)
+                    .ToList();
+
+                if (closedIssues.Count > 0)
+                {
+                    var milestones = closedIssues
+                        .Select(i => i.Milestone)
+                        .OrderByDescending(m => m, closeComparer)
+                        .GroupBy(m => m.Title);
+
+                    BuildIssuesSection(
+                        builder,
+                        projectName,
+                        forMilestones,
+                        string.Format(
+                            GitHubConstants.ClosedIssuesTitle,
+                            singlePage ? "#" : string.Empty),
+                        GitHubConstants.ClosedIssuesSectionTitleTemplate,
+                        closedIssues,
+                        milestones,
+                        singlePage);
+                }
             }
 
             return builder.ToString();
@@ -607,6 +614,13 @@ namespace GitHubHelper
         /// at the root of the repository only. "label" corresponds to the
         /// labels passed in the createFor parameter, but URL encoded.
         /// </summary>
+        /// <param name="accountName">The name of the GitHub account.</param>
+        /// <param name="repoName">The name of the GitHub repo to create the release page for.</param>
+        /// <param name="branchName">The name of the branch in which to commit the result.</param>
+        /// <param name="createFor">A list of <see cref="ReleaseNotesPageInfo"/> with all the information for the pages to create.</param>
+        /// <param name="forMilestones">A list of the milestones to create the release notes for, or null for all milestones.</param>
+        /// <param name="singlePage">If true, a single release note page will be created.</param>
+        /// <param name="token">The GitHub token to use for authentication.</param>
         public async Task<ReleaseNotesResult> CreateReleaseNotesMarkdown(
             string accountName,
             string repoName,
@@ -666,22 +680,15 @@ namespace GitHubHelper
                     .Where(i => i.Projects.Contains(page.Project))
                     .ToList();
 
-                if (issuesForPage.Count == 0)
-                {
-                    page.Markdown = "> Nothing found";
-                }
-                else
-                {
-                    page.Markdown = CreateReleaseNotesPageFor(
-                        accountName,
-                        repoName,
-                        page.Project,
-                        page.ProjectId,
-                        issuesForPage,
-                        forMilestones,
-                        page.Header,
-                        singlePage);
-                }
+                page.Markdown = CreateReleaseNotesPageFor(
+                    accountName,
+                    repoName,
+                    page.Project,
+                    page.ProjectId,
+                    issuesForPage,
+                    forMilestones,
+                    page.Header,
+                    singlePage);
 
                 subPages.Add(page);
 

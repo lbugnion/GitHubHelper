@@ -22,10 +22,9 @@ namespace GitHubHelper.Test
             [HttpTrigger(
                 AuthorizationLevel.Anonymous, 
                 "post", 
-                Route = "githubhelper/test/{milestones}/singlepage/{singlePage}")] 
+                Route = "githubhelper/test/{milestones}")] 
             HttpRequest req,
             string milestones,
-            bool singlePage,
             ILogger log)
         {
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -48,7 +47,7 @@ namespace GitHubHelper.Test
                 info.BranchName,
                 info.Projects,
                 forMilestones,
-                singlePage,
+                info.SinglePage,
                 token);
 
             var resultBuilder = new StringBuilder();

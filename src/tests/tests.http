@@ -1,5 +1,5 @@
 ### Test release notes
-POST http://localhost:7071/api/githubhelper/test/all
+POST http://localhost:7071/api/githubhelper/test-release-notes/all
 x-githubhelper-test-token: {{Token}}
 
 {
@@ -24,6 +24,15 @@ x-githubhelper-test-token: {{Token}}
     ]
 }
 
+### Test getting issues
+POST http://localhost:7017/api/githubhelper/test-get-issues
+x-githubhelper-test-token: {{enterprise-token}}
+
+{
+    "AccountName": "microsoft",
+    "RepoName": "ignite25-LAB500-unified-observability-and-optimization-with-azure-operations-platform",
+    "BranchName": "main"
+}
 
 # {
 #     "AccountName": "lbugnion",

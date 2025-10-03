@@ -23,6 +23,12 @@ namespace ReleaseNotesMaker.Model
             set;
         }
 
+        public string FilePath
+        {
+            get;
+            set;
+        }
+
         public IList<ReleaseNotesPageInfo> Projects
         {
             get;
@@ -40,5 +46,18 @@ namespace ReleaseNotesMaker.Model
             get; 
             set; 
         }
+
+        public string CommitterName
+        {
+            get;
+            set;
+        }
+
+        public string CommitterEmail
+        {
+            get;
+            set;
+        }
+
     }
 }

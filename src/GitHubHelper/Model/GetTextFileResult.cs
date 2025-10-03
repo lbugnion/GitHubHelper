@@ -53,5 +53,12 @@ namespace GitHubHelper.Model
             get;
             set;
         }
+
+        [JsonProperty("sha")]
+        public string Sha
+        {
+            get;
+            set;
+        }
     }
 }

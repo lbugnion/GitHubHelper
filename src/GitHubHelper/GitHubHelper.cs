@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("1.2.*")]
+[assembly: AssemblyVersion("1.3.*")]
 
 namespace GitHubHelper
 {
@@ -313,7 +313,7 @@ namespace GitHubHelper
         }
 
         public async Task<GetHeadResult> CommitFiles(
-                                    string accountName,
+            string accountName,
             string repoName,
             string branchName,
             string githubToken,
@@ -581,6 +581,7 @@ namespace GitHubHelper
                 accountName,
                 repoName,
                 GitHubConstants.CreateNewBranchUrl);
+
             var request = new HttpRequestMessage
             {
                 RequestUri = new Uri(url),
@@ -728,6 +729,107 @@ namespace GitHubHelper
             return result;
         }
 
+        //public async Task<DeleteTextFileResult> DeleteFileIfExists(
+        //    string accountName,
+        //    string repoName,
+        //    string branchName,
+        //    string filePathWithExtension,
+        //    string githubToken,
+        //    string committerName,
+        //    string committerEmail,
+        //    string commitMessage)
+        //{
+        //    var url = string.Format(GitHubConstants.GitHubApiBaseUrlMask, accountName, repoName, filePathWithExtension);
+
+        //    var file = await GetTextFile(accountName, repoName, branchName, filePathWithExtension, githubToken);
+
+        //    if (!string.IsNullOrEmpty(file.ErrorMessage)
+        //        || string.IsNullOrEmpty(file.Sha))
+        //    {
+        //        return new DeleteTextFileResult
+        //        {
+        //            ErrorMessage = $"Not found: {filePathWithExtension} in branch {branchName}",
+        //            StatusCode = HttpStatusCode.NotFound
+        //        };
+        //    }
+
+        //    var deleteInfo = new DeleteFileInfo
+        //    {
+        //        //Owner = accountName,
+        //        //Repo = repoName,
+        //        //Path = filePathWithExtension,
+        //        Message = commitMessage,
+        //        Branch = branchName,
+        //        Sha = file.Sha,
+        //        //Committer = new()
+        //        //{
+        //        //    Name = committerName,
+        //        //    Email = committerEmail
+        //        //}
+        //    };
+
+        //    var json = JsonConvert.SerializeObject(deleteInfo);
+        //    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //    var request = new HttpRequestMessage
+        //    {
+        //        RequestUri = new Uri(url),
+        //        Method = HttpMethod.Delete,
+        //        Content = content
+        //    };
+
+        //    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", githubToken);
+        //    request.Headers.Accept.Add(
+        //        new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
+        //    request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
+
+        //    var response = await _client.SendAsync(request);
+        //    var responseText = await response.Content.ReadAsStringAsync();
+
+        //    if (response.StatusCode != HttpStatusCode.OK)
+        //    {
+        //        return new DeleteTextFileResult
+        //        {
+        //            StatusCode = response.StatusCode,
+        //            ErrorMessage = responseText
+        //        };
+        //    }
+
+        //    return null;
+
+        //    //try
+        //    //{
+        //    //    var result = JsonConvert.DeserializeObject<GetTextFileResult>(responseText);
+
+        //    //    if (result.Type != "file")
+        //    //    {
+        //    //        return new GetTextFileResult
+        //    //        {
+        //    //            ErrorMessage = $"{filePathWithExtension} doesn't seem to be a file on GitHub"
+        //    //        };
+        //    //    }
+
+        //    //    if (string.IsNullOrEmpty(result.EncodedContent))
+        //    //    {
+        //    //        return new GetTextFileResult
+        //    //        {
+        //    //            ErrorMessage = $"{filePathWithExtension} doesn't have content"
+        //    //        };
+        //    //    }
+
+        //    //    var bytes = Convert.FromBase64String(result.EncodedContent);
+        //    //    result.TextContent = Encoding.UTF8.GetString(bytes);
+        //    //    return result;
+        //    //}
+        //    //catch (Exception ex)
+        //    //{
+        //    //    return new GetTextFileResult
+        //    //    {
+        //    //        ErrorMessage = ex.Message
+        //    //    };
+        //    //}
+        //}
+
         public async Task<GetHeadResult> GetHead(
             string accountName,
             string repoName,
@@ -778,7 +880,7 @@ namespace GitHubHelper
         }
 
         public async Task<IssueResult> GetIssues(
-                    string accountName,
+            string accountName,
             string repoName,
             string token)
         {

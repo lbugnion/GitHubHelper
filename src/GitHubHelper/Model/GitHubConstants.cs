@@ -2,7 +2,7 @@
 {
     public static class GitHubConstants
     {
-        public const string AcceptHeader = "application/vnd.github.v3+json";
+        public const string AcceptHeader = "application/vnd.github+json";
         public const string ClosedIssuesSectionTitleTemplate = "{0}### Fixed issues in [{1}]({2})";
         public const string ClosedIssuesTitle = "{0}## Closed issues";
         public const string ClosedOn = " *(closed on {0:dd MMM yyyy})*";

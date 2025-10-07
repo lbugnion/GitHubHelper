@@ -44,6 +44,7 @@ namespace GitHubHelper.Model
             }
         }
 
+        [JsonProperty("labels")]
         public IList<IssueLabel> Labels
         {
             get;
@@ -83,6 +84,12 @@ namespace GitHubHelper.Model
         }
 
         public string Title
+        {
+            get;
+            set;
+        }
+
+        public string Body
         {
             get;
             set;

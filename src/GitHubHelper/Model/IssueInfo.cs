@@ -102,6 +102,13 @@ namespace GitHubHelper.Model
             set;
         }
 
+        [JsonProperty("user")]
+        public User User
+        {
+            get;
+            set;
+        }
+
         public override string ToString()
         {
             return $"{Number:D2} / {State} / {PullRequest == null} / {Title}";

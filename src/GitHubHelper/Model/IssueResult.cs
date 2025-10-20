@@ -9,5 +9,11 @@ namespace GitHubHelper.Model
             get;
             set;
         }
+
+        public string Json
+        {
+            get;
+            set;
+        }
     }
 }

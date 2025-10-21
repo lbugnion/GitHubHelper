@@ -926,13 +926,13 @@ namespace GitHubHelper
                     {
                         result.Issues.Add(issue);
                     }
+
+                    result.JsonFiles.Add(responseContent);
                 }
                 else
                 {
                     haveMoreIssues = false;
                 }
-
-                result.JsonFiles.Add(responseContent);
             }
 
             return result;

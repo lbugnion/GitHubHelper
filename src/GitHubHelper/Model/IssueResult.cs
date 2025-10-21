@@ -14,6 +14,6 @@ namespace GitHubHelper.Model
         {
             get;
             set;
-        }
+        } = new();
     }
 }

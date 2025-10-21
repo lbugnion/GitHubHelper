@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("1.6.*")]
+[assembly: AssemblyVersion("1.6.1.*")]
 
 namespace GitHubHelper
 {
@@ -932,7 +932,7 @@ namespace GitHubHelper
                     haveMoreIssues = false;
                 }
 
-                result.Json = responseContent;
+                result.JsonFiles.Add(responseContent);
             }
 
             return result;

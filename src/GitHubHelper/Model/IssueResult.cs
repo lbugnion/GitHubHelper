@@ -10,7 +10,7 @@ namespace GitHubHelper.Model
             set;
         }
 
-        public string Json
+        public List<string> JsonFiles
         {
             get;
             set;

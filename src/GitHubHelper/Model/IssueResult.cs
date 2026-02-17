@@ -4,16 +4,16 @@ namespace GitHubHelper.Model
 {
     public class IssueResult : ErrorResult
     {
-        public IList<IssueInfo> Issues
+        public List<IssueInfo> Issues
         {
             get;
             set;
-        }
+        } = [];
 
         public List<string> JsonFiles
         {
             get;
             set;
-        } = new();
+        } = [];
     }
 }

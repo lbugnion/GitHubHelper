@@ -44,6 +44,13 @@ namespace GitHubHelper.Model
             }
         }
 
+        [JsonProperty("timeline_url")]
+        public string TimelineUrl
+        {
+            get;
+            set;
+        }
+
         [JsonProperty("labels")]
         public IList<IssueLabel> Labels
         {

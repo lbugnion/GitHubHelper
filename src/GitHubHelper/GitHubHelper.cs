@@ -12,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 // Set version number for the assembly.
-[assembly: AssemblyVersion("1.6.1.*")]
+[assembly: AssemblyVersion("1.7.1.*")]
 
 namespace GitHubHelper
 {
@@ -882,9 +882,11 @@ namespace GitHubHelper
         public async Task<IssueResult> GetIssues(
             string accountName,
             string repoName,
-            string token)
+            string token,
+            IssuesKind kind = IssuesKind.AllIssues)
         {
             var haveMoreIssues = true;
+
             var result = new IssueResult
             {
                 Issues = new List<IssueInfo>()
@@ -904,6 +906,11 @@ namespace GitHubHelper
                     Method = HttpMethod.Get
                 };
 
+                if (kind == IssuesKind.OpenIssues)
+                {
+                    request.RequestUri = new Uri(request.RequestUri.ToString().Replace("state=all", "state=open"));
+                }
+
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
                 request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(GitHubConstants.AcceptHeader));
 
@@ -922,11 +929,7 @@ namespace GitHubHelper
 
                 if (issues.Count > 0)
                 {
-                    foreach (var issue in issues)
-                    {
-                        result.Issues.Add(issue);
-                    }
-
+                    result.Issues.AddRange(issues);
                     result.JsonFiles.Add(responseContent);
                 }
                 else
@@ -1044,5 +1047,12 @@ namespace GitHubHelper
                 };
             }
         }
+    }
+
+    public enum IssuesKind
+    {
+        None = 0,
+        OpenIssues = 1,
+        AllIssues = 1,
     }
 }

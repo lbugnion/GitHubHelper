@@ -1,9 +1,11 @@
+using GitHubHelper.Model;
 using GitHubHelper.Tests.Model;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using ReleaseNotesMaker.Model;
+using System;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -25,8 +27,9 @@ public class TestGetIssues
             [HttpTrigger(
                 AuthorizationLevel.Function,
                 "post",
-            Route = "githubhelper/test-get-issues")]
-            HttpRequestData req)
+            Route = "githubhelper/test-get-issues/{kind?}")]
+            HttpRequestData req,
+            string kind = null)
     {
         string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
         var info = JsonConvert.DeserializeObject<GitHubInfo>(requestBody);
@@ -34,7 +37,32 @@ public class TestGetIssues
 
         var helper = new GitHubHelper();
 
-        var result = await helper.GetIssues(
+        IssueResult result;
+
+        if (!string.IsNullOrEmpty(kind))
+        {
+            var issuesKind = kind switch
+            {
+                "open" => IssuesKind.OpenIssues,
+                "all" => IssuesKind.AllIssues,
+                _ => throw new ArgumentException($"Invalid issues kind: {kind}")
+            };
+
+            result = await helper.GetIssues(
+                info.AccountName,
+                info.RepoName,
+                token.First(),
+                issuesKind);
+        }
+        else
+        {
+            result = await helper.GetIssues(
+                info.AccountName,
+                info.RepoName,
+                token.First());
+        }
+
+        result = await helper.GetIssues(
             info.AccountName,
             info.RepoName,
             token.First());
